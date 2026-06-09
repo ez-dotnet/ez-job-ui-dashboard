@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EZ.Jobs Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f8f8f7;
+    --surface: #ffffff;
+    --surface-2: #f1f0ec;
+    --border: rgba(0,0,0,0.08);
+    --border-md: rgba(0,0,0,0.14);
+    --text: #1a1a19;
+    --text-2: #6b6b68;
+    --text-3: #9b9b97;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --blue: #185fa5;    --blue-bg: #e6f1fb;    --blue-text: #0c447c;
+    --green: #3b6d11;   --green-bg: #eaf3de;   --green-text: #27500a;
+    --amber: #854f0b;   --amber-bg: #faeeda;   --amber-text: #633806;
+    --red: #a32d2d;     --red-bg: #fcebeb;     --red-text: #791f1f;
+    --gray-bg: #f1f0ec; --gray-text: #5f5e5a;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a19;
+      --surface: #242423;
+      --surface-2: #2c2c2a;
+      --border: rgba(255,255,255,0.08);
+      --border-md: rgba(255,255,255,0.14);
+      --text: #f0efeb;
+      --text-2: #a0a09c;
+      --text-3: #6b6b68;
+      --blue-bg: #042c53;     --blue-text: #b5d4f4;
+      --green-bg: #173404;    --green-text: #c0dd97;
+      --amber-bg: #412402;    --amber-text: #fac775;
+      --red-bg: #501313;      --red-text: #f7c1c1;
+      --gray-bg: #2c2c2a;     --gray-text: #b4b2a9;
+    }
+  }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; min-width: 0; }
+  @media (max-width: 768px) { .main { padding: 1.5rem 1rem; } .layout { grid-template-columns: 180px 1fr; } }
+  @media (max-width: 480px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  .sidebar { background: var(--surface); border-right: 0.5px solid var(--border); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 0.25rem; position: sticky; top: 0; height: 100vh; }
+  .sidebar-logo { font-size: 15px; font-weight: 500; color: var(--text); padding: 0.25rem 0.75rem 1.25rem; display: flex; align-items: center; gap: 8px; }
+  .sidebar-logo i { font-size: 18px; color: var(--blue); }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-2); font-size: 13px; border: none; background: none; width: 100%; text-align: left; transition: background 0.1s; }
+  .nav-item:hover { background: var(--surface-2); color: var(--text); }
+  .nav-item.active { background: var(--surface-2); color: var(--text); font-weight: 500; }
+  .nav-item i { font-size: 16px; }
+
+  .main { padding: 2rem 2.5rem; overflow-y: auto; overflow-x: auto; min-width: 0; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; }
+  .page-title { font-size: 18px; font-weight: 500; }
+  .refresh-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); background: none; border: 0.5px solid var(--border-md); border-radius: var(--radius-sm); padding: 6px 12px; cursor: pointer; }
+  .refresh-btn:hover { background: var(--surface-2); color: var(--text); }
+  .refresh-btn.spinning i { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 2rem; }
+  .card { background: var(--surface-2); border-radius: var(--radius-sm); padding: 14px 16px; cursor: pointer; transition: opacity 0.15s; }
+  .card:hover { opacity: 0.8; }
+  .card.active-filter { outline: 2px solid var(--blue); }
+  .card-label { font-size: 11px; color: var(--text-2); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .card-label i { font-size: 13px; }
+  .card-value { font-size: 28px; font-weight: 500; line-height: 1; }
+  .v-processing { color: var(--blue-text); }
+  .v-pending     { color: var(--amber-text); }
+  .v-success     { color: var(--green-text); }
+  .v-failed      { color: var(--red-text); }
+  .v-scheduled   { color: var(--gray-text); }
+
+  .section { margin-bottom: 2rem; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+  .section-title { font-size: 12px; font-weight: 500; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .filter-select { font-size: 12px; color: var(--text-2); background: var(--surface); border: 0.5px solid var(--border-md); border-radius: var(--radius-sm); padding: 5px 8px; cursor: pointer; }
+  .filter-select:focus { outline: none; border-color: var(--blue); }
+
+  table { width: 100%; border-collapse: collapse; }
+  #overview-table-wrap, #jobs-table-wrap, #recurring-table-wrap { overflow-x: auto; }
+  thead th { font-size: 11px; font-weight: 500; color: var(--text-3); text-align: left; padding: 0 12px 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  tbody td { padding: 10px 12px; border-top: 0.5px solid var(--border); font-size: 13px; vertical-align: middle; }
+  tbody tr:hover td { background: var(--surface-2); }
+  .job-name { font-weight: 500; color: var(--text); }
+  .job-id   { font-family: monospace; font-size: 11px; color: var(--text-3); }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 99px; }
+  .b-processing { background: var(--blue-bg);  color: var(--blue-text); }
+  .b-success    { background: var(--green-bg); color: var(--green-text); }
+  .b-failed     { background: var(--red-bg);   color: var(--red-text); }
+  .b-pending    { background: var(--amber-bg); color: var(--amber-text); }
+  .b-scheduled  { background: var(--gray-bg);  color: var(--gray-text); border: 0.5px solid var(--border-md); }
+
+  .action-btn { font-size: 11px; background: none; border: 0.5px solid var(--border-md); border-radius: var(--radius-sm); padding: 4px 10px; cursor: pointer; color: var(--text-2); display: inline-flex; align-items: center; gap: 4px; }
+  .action-btn:hover { background: var(--surface-2); color: var(--text); }
+  .action-btn.danger:hover { background: var(--red-bg); color: var(--red-text); border-color: var(--red); }
+  .action-btn.retry:hover  { background: var(--blue-bg); color: var(--blue-text); border-color: var(--blue); }
+
+  .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 1rem; font-size: 12px; color: var(--text-2); }
+  .page-btn { background: none; border: 0.5px solid var(--border-md); border-radius: var(--radius-sm); padding: 4px 10px; cursor: pointer; color: var(--text-2); font-size: 12px; }
+  .page-btn:disabled { opacity: 0.4; cursor: default; }
+  .page-btn:not(:disabled):hover { background: var(--surface-2); }
+
+  .empty { text-align: center; padding: 3rem; color: var(--text-3); font-size: 13px; }
+  .empty i { font-size: 32px; display: block; margin-bottom: 8px; }
+
+  .actions-cell { position: sticky; right: 0; background: var(--bg); z-index: 1; }
+  #jobs-table-wrap, #overview-table-wrap { position: relative; }
+  tbody tr:hover td.actions-cell { background: var(--surface-2); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .cron-expr { font-family: monospace; font-size: 12px; color: var(--text-2); }
+
+  .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--surface); border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 999; opacity: 0; transform: translateY(8px); transition: all 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { border-left: 3px solid var(--green); }
+  .toast.error   { border-left: 3px solid var(--red); }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 99; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+
+  .detail-panel { position: fixed; top: 0; right: 0; width: 480px; max-width: 100vw; height: 100vh; background: var(--surface); z-index: 100; box-shadow: -4px 0 24px rgba(0,0,0,0.12); transform: translateX(100%); transition: transform 0.25s ease; display: flex; flex-direction: column; }
+  .detail-panel.open { transform: translateX(0); }
+  @media (max-width: 520px) { .detail-panel { width: 100vw; } }
+
+  .detail-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 0.5px solid var(--border); }
+  .detail-header h2 { font-size: 15px; font-weight: 500; }
+  .detail-close { background: none; border: none; cursor: pointer; color: var(--text-2); padding: 4px; border-radius: var(--radius-sm); }
+  .detail-close:hover { background: var(--surface-2); color: var(--text); }
+
+  .detail-body { flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem; }
+  @media (max-width: 480px) { .detail-body { padding: 1rem; } }
+  .detail-section { margin-bottom: 1.25rem; }
+  .detail-section-title { font-size: 11px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .detail-row { display: flex; padding: 6px 0; border-bottom: 0.5px solid var(--border); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { width: 120px; flex-shrink: 0; font-size: 12px; color: var(--text-2); }
+  .detail-value { font-size: 13px; color: var(--text); word-break: break-all; }
+
+  .detail-value.id { font-family: monospace; font-size: 11px; color: var(--text-3); }
+  .detail-value.type { font-weight: 500; }
+  #rd-recent-jobs { overflow-x: auto; }
+
+  .stack-trace { font-family: monospace; font-size: 11px; line-height: 1.6; color: var(--red-text); background: var(--red-bg); padding: 12px; border-radius: var(--radius-sm); white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; margin: 0; }
+
+  .args-list { list-style: none; padding: 0; }
+  .args-list li { font-family: monospace; font-size: 12px; padding: 4px 0; color: var(--text-2); }
+  .args-list li::before { content: '• '; color: var(--text-3); }
+
+  .detail-actions { display: flex; gap: 8px; margin-top: 1rem; }
+
+  .detail-loading { display: flex; align-items: center; justify-content: center; padding: 3rem; color: var(--text-3); font-size: 13px; flex-direction: column; gap: 8px; }
+  .detail-loading i { font-size: 28px; }
+  .detail-content { display: none; }
+  .detail-content.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <i class="ti ti-briefcase" aria-hidden="true"></i>
+      EZ.Jobs.UI.Dashboard
+    </div>
+    <button class="nav-item active" onclick="showPage('overview')" id="nav-overview">
+      <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Visão geral
+    </button>
+    <button class="nav-item" onclick="showPage('jobs')" id="nav-jobs">
+      <i class="ti ti-list" aria-hidden="true"></i> Jobs
+    </button>
+    <button class="nav-item" onclick="showPage('recurring')" id="nav-recurring">
+      <i class="ti ti-repeat" aria-hidden="true"></i> Recorrentes
+    </button>
+  </aside>
+
+  <main class="main">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <h1 class="page-title">Visão geral</h1>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select class="filter-select" id="refresh-interval" onchange="resetCountdown()">
+            <option value="5">5s</option>
+            <option value="10" selected>10s</option>
+            <option value="20">20s</option>
+            <option value="30">30s</option>
+          </select>
+          <button class="refresh-btn" id="refresh-btn" onclick="refreshAll()">
+            <i class="ti ti-refresh" aria-hidden="true"></i> Atualizar <span id="refresh-countdown" style="font-weight:500;margin-left:3px">10s</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="cards" id="stats-cards">
+        <div class="card" onclick="filterByStatus('processing')">
+          <div class="card-label"><i class="ti ti-loader" aria-hidden="true"></i> Processando</div>
+          <div class="card-value v-processing" id="stat-processing">—</div>
+        </div>
+        <div class="card" onclick="filterByStatus('enqueued')">
+          <div class="card-label"><i class="ti ti-clock" aria-hidden="true"></i> Pendentes</div>
+          <div class="card-value v-pending" id="stat-pending">—</div>
+        </div>
+        <div class="card" onclick="filterByStatus('succeeded')">
+          <div class="card-label"><i class="ti ti-circle-check" aria-hidden="true"></i> Concluídos</div>
+          <div class="card-value v-success" id="stat-success">—</div>
+        </div>
+        <div class="card" onclick="filterByStatus('failed')">
+          <div class="card-label"><i class="ti ti-alert-circle" aria-hidden="true"></i> Com falha</div>
+          <div class="card-value v-failed" id="stat-failed">—</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Jobs recentes</span>
+        </div>
+        <div id="overview-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- JOBS -->
+    <div class="page" id="page-jobs">
+      <div class="page-header">
+        <h1 class="page-title">Jobs</h1>
+        <div class="filters">
+          <select class="filter-select" id="status-filter" onchange="loadJobs(1)">
+            <option value="">Todos os status</option>
+            <option value="processing">Processando</option>
+            <option value="enqueued">Enfileirado</option>
+            <option value="succeeded">Sucedido</option>
+            <option value="failed">Falhou</option>
+          </select>
+          <input class="filter-select" id="jobs-name-filter" placeholder="Filtrar por nome..." oninput="loadJobs(1)" style="width:200px">
+        </div>
+      </div>
+      <div id="jobs-table-wrap"></div>
+      <div class="pagination" id="jobs-pagination"></div>
+    </div>
+
+    <!-- RECURRING -->
+    <div class="page" id="page-recurring">
+      <div class="page-header">
+        <h1 class="page-title">Definições recorrentes</h1>
+        <div class="filters">
+          <select class="filter-select" id="recurring-status-filter" onchange="filterRecurring()">
+            <option value="">Todos os status</option>
+            <option value="active">Ativos</option>
+            <option value="paused">Pausados</option>
+          </select>
+          <input class="filter-select" id="recurring-filter" placeholder="Filtrar por nome..." oninput="filterRecurring()" style="width:200px">
+        </div>
+      </div>
+      <div id="recurring-table-wrap"></div>
+    </div>
+
+  </main>
+</div>
+
+<div class="overlay" id="detail-overlay" onclick="closeDetail()"></div>
+
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <h2 id="detail-title">Detalhes</h2>
+    <button class="detail-close" onclick="closeDetail()"><i class="ti ti-x" aria-hidden="true"></i></button>
+  </div>
+  <div class="detail-body" id="detail-body">
+    <div class="detail-loading" id="detail-loading">
+      <i class="ti ti-loader" aria-hidden="true"></i> Carregando...
+    </div>
+
+    <!-- Job detail -->
+    <div class="detail-content" id="detail-content">
+      <div class="detail-section">
+        <div class="detail-section-title">Identificação</div>
+        <div class="detail-row"><span class="detail-label">ID</span><span class="detail-value id" id="dd-id"></span></div>
+        <div class="detail-row"><span class="detail-label">Tipo</span><span class="detail-value type" id="dd-type"></span></div>
+        <div class="detail-row"><span class="detail-label">Método</span><span class="detail-value" id="dd-method"></span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Status</div>
+        <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" id="dd-status"></span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Tempos</div>
+        <div class="detail-row"><span class="detail-label">Enfileirado</span><span class="detail-value" id="dd-enqueued"></span></div>
+        <div class="detail-row"><span class="detail-label">Iniciado</span><span class="detail-value" id="dd-started"></span></div>
+        <div class="detail-row"><span class="detail-label">Concluído</span><span class="detail-value" id="dd-completed"></span></div>
+      </div>
+      <div class="detail-section" id="dd-args-section">
+        <div class="detail-section-title">Argumentos</div>
+        <ul class="args-list" id="dd-args"></ul>
+      </div>
+      <div class="detail-section" id="dd-error-section" style="display:none">
+        <div class="detail-section-title">Erro</div>
+        <pre class="stack-trace" id="dd-error"></pre>
+      </div>
+      <div class="detail-actions" id="dd-actions"></div>
+    </div>
+
+    <!-- Recurring detail -->
+    <div class="detail-content" id="recurring-detail-content">
+      <div class="detail-section">
+        <div class="detail-section-title">Identificação</div>
+        <div class="detail-row"><span class="detail-label">Nome</span><span class="detail-value type" id="rd-name"></span></div>
+        <div class="detail-row"><span class="detail-label">Método</span><span class="detail-value" id="rd-method"></span></div>
+        <div class="detail-row"><span class="detail-label">Cron</span><span class="detail-value cron-expr" id="rd-cron"></span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Situação</div>
+        <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" id="rd-status"></span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Execuções</div>
+        <div class="detail-row"><span class="detail-label">Última execução</span><span class="detail-value" id="rd-last-exec"></span></div>
+        <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" id="rd-last-status"></span></div>
+        <div class="detail-row"><span class="detail-label">Próxima execução</span><span class="detail-value" id="rd-next-exec"></span></div>
+        <div class="detail-row"><span class="detail-label">Total</span><span class="detail-value" id="rd-total"></span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Jobs recentes</div>
+        <div id="rd-recent-jobs"></div>
+      </div>
+      <div class="detail-actions" id="rd-actions"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const BASE = window.location.pathname.replace(/\/+$/, '');
+  const API  = BASE + '/api';
+
+  let currentPage = 1;
+  let jobsTotal   = 0;
+  const PAGE_SIZE = 20;
+
+  // ── Navigation ──────────────────────────────────────────
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.getElementById('nav-' + name).classList.add('active');
+    if (name === 'jobs')       loadJobs(1);
+    if (name === 'recurring')  loadRecurring();
+    if (name === 'overview')   refreshAll();
+  }
+
+  // ── Stats ────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const r = await fetch(API + '/stats');
+      const s = await r.json();
+      document.getElementById('stat-processing').textContent = s.processing;
+      document.getElementById('stat-pending').textContent    = s.enqueued;
+      document.getElementById('stat-success').textContent    = s.succeeded;
+      document.getElementById('stat-failed').textContent     = s.failed;
+    } catch { }
+  }
+
+  // ── Jobs ─────────────────────────────────────────────────
+  async function loadJobs(page) {
+    currentPage = page || 1;
+    const status   = document.getElementById('status-filter')?.value   || '';
+    const name     = document.getElementById('jobs-name-filter')?.value || '';
+    const params   = new URLSearchParams({ page: currentPage, pageSize: PAGE_SIZE });
+    if (status)   params.set('status', status);
+    if (name)     params.set('name', name);
+
+    try {
+      const r    = await fetch(API + '/jobs?' + params);
+      const data = await r.json();
+      jobsTotal  = data.total;
+      renderJobsTable(data.items, 'jobs-table-wrap');
+      renderPagination();
+    } catch { }
+  }
+
+  function renderJobsTable(items, targetId) {
+    const wrap = document.getElementById(targetId);
+    if (!items.length) { wrap.innerHTML = empty('Nenhum job encontrado'); return; }
+
+    const rows = items.map(j => `
+      <tr onclick="openDetail('${j.id}')" style="cursor:pointer">
+        <td>
+          <div class="job-name">${esc(j.jobType)}</div>
+          <div class="job-id">${j.id.slice(0,8)}</div>
+        </td>
+        <td>${badge(j.status)}</td>
+        <td style="color:var(--text-2)">${timeAgo(j.createdAt)}</td>
+        <td class="actions-cell" onclick="event.stopPropagation()">
+          ${ j.status === 'failed' ? `<button class="action-btn retry" onclick="retryJob('${j.id}')" title="Reprocessar"><i class="ti ti-refresh" aria-hidden="true"></i></button>` : '' }
+          ${ j.status !== 'processing' ? `<button class="action-btn danger" onclick="cancelJob('${j.id}')" title="Cancelar"><i class="ti ti-x" aria-hidden="true"></i></button>` : '' }
+        </td>
+      </tr>`).join('');
+
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Job</th><th>Status</th><th>Criado</th><th class="actions-cell"></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function renderPagination() {
+    const total = Math.ceil(jobsTotal / PAGE_SIZE);
+    const el    = document.getElementById('jobs-pagination');
+    if (total <= 1) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+      <span>${currentPage} de ${total}</span>
+      <button class="page-btn" onclick="loadJobs(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>
+        <i class="ti ti-chevron-left" aria-hidden="true"></i>
+      </button>
+      <button class="page-btn" onclick="loadJobs(${currentPage + 1})" ${currentPage >= total ? 'disabled' : ''}>
+        <i class="ti ti-chevron-right" aria-hidden="true"></i>
+      </button>`;
+  }
+
+  // ── Actions ──────────────────────────────────────────────
+  async function retryJob(id) {
+    try {
+      const r = await fetch(API + '/jobs/' + id + '/retry', { method: 'POST' });
+      if (r.ok) { toast('Job reenfileirado com sucesso', 'success'); refreshAll(); }
+      else       { toast('Erro ao reprocessar job', 'error'); }
+    } catch { toast('Erro ao reprocessar job', 'error'); }
+  }
+
+  async function cancelJob(id) {
+    if (!confirm('Cancelar este job?')) return;
+    try {
+      const r = await fetch(API + '/jobs/' + id, { method: 'DELETE' });
+      if (r.ok) { toast('Job cancelado', 'success'); refreshAll(); }
+      else       { toast('Erro ao cancelar job', 'error'); }
+    } catch { toast('Erro ao cancelar job', 'error'); }
+  }
+
+  function filterByStatus(status) {
+    document.getElementById('status-filter').value = status;
+    showPage('jobs');
+  }
+
+  // ── Auto-refresh ─────────────────────────────────────────
+  let countdownValue = 10;
+  let countdownTimer = null;
+
+  function startCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      countdownValue--;
+      const el = document.getElementById('refresh-countdown');
+      if (el) el.textContent = `${countdownValue}s`;
+      if (countdownValue <= 0) refreshAll();
+    }, 1000);
+  }
+
+  function resetCountdown() {
+    const el = document.getElementById('refresh-interval');
+    countdownValue = parseInt(el?.value || '10', 10);
+    const cd = document.getElementById('refresh-countdown');
+    if (cd) cd.textContent = `${countdownValue}s`;
+    startCountdown();
+  }
+
+  async function refreshAll() {
+    const btn = document.getElementById('refresh-btn');
+    btn?.classList.add('spinning');
+    await Promise.all([loadStats(), loadOverviewJobs(), loadRecurring()]);
+    btn?.classList.remove('spinning');
+    resetCountdown();
+  }
+
+  async function loadOverviewJobs() {
+    try {
+      const r    = await fetch(API + '/jobs?pageSize=10');
+      const data = await r.json();
+      renderJobsTable(data.items, 'overview-table-wrap');
+    } catch { }
+  }
+
+  // ── Helpers ──────────────────────────────────────────────
+  function badge(status) {
+    const map = {
+      processing: ['b-processing', 'ti-loader',        'processando'],
+      succeeded:  ['b-success',    'ti-circle-check',   'sucedido'],
+      failed:     ['b-failed',     'ti-alert-circle',   'falhou'],
+      enqueued:   ['b-pending',    'ti-clock',          'enfileirado'],
+    };
+    const [cls, icon, label] = map[status] || ['b-scheduled', 'ti-help', status];
+    return `<span class="badge ${cls}"><i class="ti ${icon}" aria-hidden="true"></i> ${label}</span>`;
+  }
+
+  function empty(msg) {
+    return `<div class="empty"><i class="ti ti-inbox" aria-hidden="true"></i>${msg}</div>`;
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function timeAgo(iso) {
+    const diff = (Date.now() - new Date(iso)) / 1000;
+    if (diff < 60)   return `há ${Math.round(diff)}s`;
+    if (diff < 3600) return `há ${Math.round(diff/60)}min`;
+    if (diff < 86400) return `há ${Math.round(diff/3600)}h`;
+    return new Date(iso).toLocaleDateString('pt-BR');
+  }
+
+  function timeUntil(iso) {
+    const diff = (new Date(iso) - Date.now()) / 1000;
+    if (diff < 0)    return 'agora';
+    if (diff < 60)   return `em ${Math.round(diff)}s`;
+    if (diff < 3600) return `em ${Math.round(diff/60)}min`;
+    if (diff < 86400) return `em ${Math.round(diff/3600)}h`;
+    return new Date(iso).toLocaleDateString('pt-BR');
+  }
+
+  function toast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast ${type} show`;
+    setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  // ── Detail Panel ─────────────────────────────────────────
+  async function openDetail(id) {
+    document.getElementById('detail-panel').classList.add('open');
+    document.getElementById('detail-overlay').classList.add('show');
+    document.getElementById('detail-loading').style.display = '';
+    document.getElementById('detail-content').classList.remove('show');
+
+    try {
+      const r = await fetch(API + '/jobs/' + id);
+      if (!r.ok) { document.getElementById('detail-loading').innerHTML = '<i class="ti ti-alert-circle" aria-hidden="true"></i> Erro ao carregar detalhes'; return; }
+      const j = await r.json();
+      document.getElementById('detail-loading').style.display = 'none';
+      document.getElementById('detail-content').classList.add('show');
+      renderDetail(j);
+    } catch {
+      document.getElementById('detail-loading').innerHTML = '<i class="ti ti-alert-circle" aria-hidden="true"></i> Erro ao carregar detalhes';
+    }
+  }
+
+  function renderDetail(j) {
+    document.getElementById('dd-id').textContent      = j.id;
+    document.getElementById('dd-type').textContent    = j.jobType;
+    document.getElementById('dd-method').textContent  = j.methodName;
+    document.getElementById('dd-status').innerHTML    = badge(j.status);
+    document.getElementById('dd-enqueued').textContent = formatDateTime(j.createdAt);
+    document.getElementById('dd-started').textContent  = j.startedAt ? formatDateTime(j.startedAt) : '—';
+    document.getElementById('dd-completed').textContent = j.completedAt ? formatDateTime(j.completedAt) : '—';
+
+    const argsEl = document.getElementById('dd-args');
+    if (j.arguments && j.arguments.length) {
+      argsEl.innerHTML = j.arguments.map(a => `<li>${esc(formatArg(a))}</li>`).join('');
+    } else {
+      argsEl.innerHTML = '<li style="color:var(--text-3)">Nenhum argumento</li>';
+    }
+
+    const errEl = document.getElementById('dd-error-section');
+    if (j.error) {
+      errEl.style.display = '';
+      document.getElementById('dd-error').textContent = j.error;
+    } else {
+      errEl.style.display = 'none';
+    }
+
+    const actEl = document.getElementById('dd-actions');
+    let actions = '';
+    if (j.status === 'failed') {
+      actions += `<button class="action-btn retry" onclick="retryJob('${j.id}');closeDetail()" title="Reprocessar"><i class="ti ti-refresh" aria-hidden="true"></i></button>`;
+    } else if (j.status === 'processing') {
+      actions += `<button class="action-btn retry" disabled style="opacity:0.4;cursor:not-allowed" title="Reprocessar"><i class="ti ti-refresh" aria-hidden="true"></i></button>`;
+    }
+    if (j.status !== 'processing') {
+      actions += `<button class="action-btn danger" onclick="cancelJob('${j.id}');closeDetail()" title="Cancelar"><i class="ti ti-x" aria-hidden="true"></i></button>`;
+    }
+    actEl.innerHTML = actions;
+  }
+
+  function closeDetail() {
+    document.getElementById('detail-panel').classList.remove('open');
+    document.getElementById('detail-overlay').classList.remove('show');
+    document.getElementById('recurring-detail-content').classList.remove('show');
+    document.getElementById('detail-title').textContent = 'Detalhes';
+  }
+
+  function formatDateTime(iso) {
+    return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  function formatArg(arg) {
+    if (arg === null || arg === undefined) return 'null';
+    if (typeof arg === 'string') return arg;
+    return JSON.stringify(arg);
+  }
+
+  // ── Recurring ─────────────────────────────────────────────
+  let allRecurringDefs = [];
+
+  function filterRecurring() {
+    loadRecurring();
+  }
+
+  async function loadRecurring() {
+    try {
+      const r    = await fetch(API + '/recurring');
+      allRecurringDefs = await r.json();
+      const filter = document.getElementById('recurring-filter')?.value?.toLowerCase() || '';
+      const statusFilter = document.getElementById('recurring-status-filter')?.value || '';
+      let filtered = allRecurringDefs;
+      if (filter) filtered = filtered.filter(d => d.jobType.toLowerCase().includes(filter));
+      if (statusFilter === 'active') filtered = filtered.filter(d => d.isActive);
+      if (statusFilter === 'paused') filtered = filtered.filter(d => !d.isActive);
+      renderRecurringTable(filtered);
+    } catch { }
+  }
+
+  function renderRecurringTable(defs) {
+    const wrap = document.getElementById('recurring-table-wrap');
+    if (!defs.length) { wrap.innerHTML = empty('Nenhuma definição recorrente'); return; }
+
+    const rows = defs.map(d => {
+      const activeHtml = d.isActive
+        ? `<span class="badge b-success"><i class="ti ti-circle-check" aria-hidden="true"></i> ativo</span>`
+        : `<span class="badge b-scheduled"><i class="ti ti-circle-minus" aria-hidden="true"></i> pausado</span>`;
+
+      const pauseBtn = d.isActive
+        ? `<button class="action-btn" onclick="event.stopPropagation();pauseRecurring('${d.id}')"><i class="ti ti-player-pause" aria-hidden="true"></i> Pausar</button>`
+        : `<button class="action-btn" onclick="event.stopPropagation();activateRecurring('${d.id}')"><i class="ti ti-player-play" aria-hidden="true"></i> Ativar</button>`;
+      const actions = pauseBtn + ` <button class="action-btn danger" onclick="event.stopPropagation();removeRecurring('${d.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>`;
+
+      return `<tr onclick="openRecurringDetail('${d.id}')" style="cursor:pointer">
+        <td>
+          <div class="job-name">${esc(d.jobType)}</div>
+          <div class="cron-expr">${esc(d.cronExpression)}</div>
+        </td>
+        <td>${activeHtml}</td>
+        <td style="color:var(--text-2)">${d.lastExecutionUtc ? timeAgo(d.lastExecutionUtc) : '—'}</td>
+        <td>
+          <span class="badge b-processing" title="Total">${d.totalExecutions}</span>
+          <span class="badge b-success" title="Sucedidos">${d.succeededExecutions}</span>
+          <span class="badge b-failed" title="Falhos">${d.failedExecutions}</span>
+        </td>
+        <td onclick="event.stopPropagation()">${actions}</td>
+      </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Definição</th><th>Status</th><th>Última execução</th><th>Jobs</th><th></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  async function pauseRecurring(id) {
+    try {
+      const r = await fetch(API + '/recurring/' + id + '/pause', { method: 'POST' });
+      if (r.ok) { toast('Definição pausada', 'success'); loadRecurring(); }
+      else       { toast('Erro ao pausar', 'error'); }
+    } catch { toast('Erro ao pausar', 'error'); }
+  }
+
+  async function activateRecurring(id) {
+    try {
+      const r = await fetch(API + '/recurring/' + id + '/activate', { method: 'POST' });
+      if (r.ok) { toast('Definição ativada', 'success'); loadRecurring(); }
+      else       { toast('Erro ao ativar', 'error'); }
+    } catch { toast('Erro ao ativar', 'error'); }
+  }
+
+  async function removeRecurring(id) {
+    if (!confirm('Remover esta definição recorrente?')) return;
+    try {
+      const r = await fetch(API + '/recurring/' + id, { method: 'DELETE' });
+      if (r.ok) { toast('Definição removida', 'success'); loadRecurring(); }
+      else       { toast('Erro ao remover', 'error'); }
+    } catch { toast('Erro ao remover', 'error'); }
+  }
+
+  // ── Recurring Detail ──────────────────────────────────────
+  async function openRecurringDetail(id) {
+    document.getElementById('detail-title').textContent = 'Definição recorrente';
+    document.getElementById('detail-panel').classList.add('open');
+    document.getElementById('detail-overlay').classList.add('show');
+    document.getElementById('detail-loading').style.display = '';
+    document.getElementById('detail-content').classList.remove('show');
+    document.getElementById('recurring-detail-content').classList.remove('show');
+
+    try {
+      const [rDef, rJobs] = await Promise.all([
+        fetch(API + '/recurring/' + id),
+        fetch(API + '/recurring/' + id + '/jobs?pageSize=5')
+      ]);
+      if (!rDef.ok) { document.getElementById('detail-loading').innerHTML = '<i class="ti ti-alert-circle" aria-hidden="true"></i> Erro ao carregar detalhes'; return; }
+      const def = await rDef.json();
+      const jobsData = rJobs.ok ? await rJobs.json() : { items: [] };
+
+      document.getElementById('detail-loading').style.display = 'none';
+      document.getElementById('recurring-detail-content').classList.add('show');
+      renderRecurringDetail(def, jobsData.items);
+    } catch {
+      document.getElementById('detail-loading').innerHTML = '<i class="ti ti-alert-circle" aria-hidden="true"></i> Erro ao carregar detalhes';
+    }
+  }
+
+  function renderRecurringDetail(def, recentJobs) {
+    document.getElementById('rd-name').textContent = def.typeName;
+    document.getElementById('rd-method').textContent = def.methodName;
+    document.getElementById('rd-cron').textContent = def.cronExpression;
+
+    document.getElementById('rd-status').innerHTML = def.isActive
+      ? `<span class="badge b-success"><i class="ti ti-circle-check" aria-hidden="true"></i> ativo</span>`
+      : `<span class="badge b-scheduled"><i class="ti ti-circle-minus" aria-hidden="true"></i> pausado</span>`;
+
+    document.getElementById('rd-last-exec').textContent = def.lastExecutionUtc ? formatDateTime(def.lastExecutionUtc) : '—';
+
+    const lastJob = recentJobs[0];
+    const lastStatus = lastJob
+      ? `<span class="badge ${lastJob.status === 'succeeded' ? 'b-success' : lastJob.status === 'failed' ? 'b-failed' : lastJob.status === 'processing' ? 'b-processing' : 'b-pending'}"><i class="ti ${lastJob.status === 'succeeded' ? 'ti-circle-check' : lastJob.status === 'failed' ? 'ti-alert-circle' : lastJob.status === 'processing' ? 'ti-loader' : 'ti-clock'}" aria-hidden="true"></i> ${lastJob.status === 'succeeded' ? 'sucedido' : lastJob.status === 'failed' ? 'falhou' : lastJob.status === 'processing' ? 'processando' : 'enfileirado'}</span>`
+      : '—';
+    document.getElementById('rd-last-status').innerHTML = lastStatus;
+
+    const nextExec = nextCronExecution(def.cronExpression);
+    document.getElementById('rd-next-exec').innerHTML = nextExec
+      ? `<span title="${formatDateTime(nextExec)}">${timeUntil(nextExec.toISOString())}</span>`
+      : '—';
+
+    document.getElementById('rd-total').textContent = `${def.succeededExecutions} sucedidos, ${def.failedExecutions} falhos (${def.totalExecutions} total)`;
+
+    const jobsEl = document.getElementById('rd-recent-jobs');
+    if (!recentJobs.length) {
+      jobsEl.innerHTML = '<div style="color:var(--text-3);padding:1rem;text-align:center">Nenhum job executado ainda</div>';
+    } else {
+      const rows = recentJobs.map(j => `
+        <tr onclick="event.stopPropagation();closeDetail();openDetail('${j.id}')" style="cursor:pointer">
+          <td><div class="job-id">${j.id.slice(0,8)}</div></td>
+          <td>${badge(j.status)}</td>
+          <td style="color:var(--text-2)">${timeAgo(j.createdAt)}</td>
+        </tr>`).join('');
+      jobsEl.innerHTML = `
+        <table>
+          <thead><tr><th>ID</th><th>Status</th><th>Criado</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    const actEl = document.getElementById('rd-actions');
+    actEl.innerHTML = `
+      ${def.isActive
+        ? `<button class="action-btn" onclick="pauseRecurring('${def.id}');closeDetail()"><i class="ti ti-player-pause" aria-hidden="true"></i> Pausar</button>`
+        : `<button class="action-btn" onclick="activateRecurring('${def.id}');closeDetail()"><i class="ti ti-player-play" aria-hidden="true"></i> Ativar</button>`}
+      <button class="action-btn danger" onclick="removeRecurring('${def.id}');closeDetail()"><i class="ti ti-trash" aria-hidden="true"></i> Remover</button>`;
+  }
+
+  // ── Cron helpers ─────────────────────────────────────────
+  function nextCronExecution(cronExpr, after) {
+    after = after || new Date();
+    const parts = cronExpr.trim().split(/\s+/);
+    if (parts.length !== 5) return null;
+
+    const start = new Date(after);
+    start.setSeconds(0, 0);
+    start.setMinutes(start.getMinutes() + 1);
+
+    for (let d = 0; d < 525600; d++) {
+      const c = new Date(start.getTime() + d * 60000);
+      if (!cronMatch(parts[0], c.getMinutes())) continue;
+      if (!cronMatch(parts[1], c.getHours())) continue;
+      if (!cronMatch(parts[2], c.getDate())) continue;
+      if (!cronMatch(parts[3], c.getMonth() + 1)) continue;
+      if (!cronMatch(parts[4], c.getDay())) continue;
+      return c;
+    }
+    return null;
+  }
+
+  function cronMatch(pattern, value) {
+    if (pattern === '*') return true;
+    if (pattern.startsWith('*/')) return value % parseInt(pattern.slice(2), 10) === 0;
+    if (pattern.includes(',')) return pattern.split(',').map(Number).includes(value);
+    if (pattern.includes('-')) { const [l, h] = pattern.split('-').map(Number); return value >= l && value <= h; }
+    return parseInt(pattern, 10) === value;
+  }
+
+  // ── Init ─────────────────────────────────────────────────
+  refreshAll();
+  startCountdown();
+</script>
+</body>
+</html>
