@@ -115,7 +115,9 @@
   .empty { text-align: center; padding: 3rem; color: var(--text-3); font-size: 13px; }
   .empty i { font-size: 32px; display: block; margin-bottom: 8px; }
 
-  .error-text { font-family: monospace; font-size: 11px; color: var(--red-text); max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
+  .actions-cell { position: sticky; right: 0; background: var(--bg); z-index: 1; }
+  #jobs-table-wrap, #overview-table-wrap { position: relative; }
+  tbody tr:hover td.actions-cell { background: var(--surface-2); }
 
   .page { display: none; }
   .page.active { display: block; }
@@ -400,18 +402,17 @@
           <div class="job-id">${j.id.slice(0,8)}</div>
         </td>
         <td>${badge(j.status)}</td>
-        ${ j.error ? `<td><span class="error-text" title="${esc(j.error)}">${esc(j.error)}</span></td>` : '<td></td>' }
         <td style="color:var(--text-2)">${timeAgo(j.createdAt)}</td>
-        <td onclick="event.stopPropagation()">
-          ${ j.status === 'failed' ? `<button class="action-btn retry" onclick="retryJob('${j.id}')"><i class="ti ti-refresh" aria-hidden="true"></i> Reprocessar</button>` : '' }
-          ${ j.status !== 'processing' ? `<button class="action-btn danger" onclick="cancelJob('${j.id}')"><i class="ti ti-x" aria-hidden="true"></i></button>` : '' }
+        <td class="actions-cell" onclick="event.stopPropagation()">
+          ${ j.status === 'failed' ? `<button class="action-btn retry" onclick="retryJob('${j.id}')" title="Reprocessar"><i class="ti ti-refresh" aria-hidden="true"></i></button>` : '' }
+          ${ j.status !== 'processing' ? `<button class="action-btn danger" onclick="cancelJob('${j.id}')" title="Cancelar"><i class="ti ti-x" aria-hidden="true"></i></button>` : '' }
         </td>
       </tr>`).join('');
 
     wrap.innerHTML = `
       <table>
         <thead><tr>
-          <th>Job</th><th>Status</th><th>Erro</th><th>Criado</th><th></th>
+          <th>Job</th><th>Status</th><th>Criado</th><th class="actions-cell"></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
@@ -582,12 +583,12 @@
     const actEl = document.getElementById('dd-actions');
     let actions = '';
     if (j.status === 'failed') {
-      actions += `<button class="action-btn retry" onclick="retryJob('${j.id}');closeDetail()"><i class="ti ti-refresh" aria-hidden="true"></i> Reprocessar</button>`;
+      actions += `<button class="action-btn retry" onclick="retryJob('${j.id}');closeDetail()" title="Reprocessar"><i class="ti ti-refresh" aria-hidden="true"></i></button>`;
     } else if (j.status === 'processing') {
-      actions += `<button class="action-btn retry" disabled style="opacity:0.4;cursor:not-allowed"><i class="ti ti-refresh" aria-hidden="true"></i> Reprocessar</button>`;
+      actions += `<button class="action-btn retry" disabled style="opacity:0.4;cursor:not-allowed" title="Reprocessar"><i class="ti ti-refresh" aria-hidden="true"></i></button>`;
     }
     if (j.status !== 'processing') {
-      actions += `<button class="action-btn danger" onclick="cancelJob('${j.id}');closeDetail()"><i class="ti ti-x" aria-hidden="true"></i> Cancelar</button>`;
+      actions += `<button class="action-btn danger" onclick="cancelJob('${j.id}');closeDetail()" title="Cancelar"><i class="ti ti-x" aria-hidden="true"></i></button>`;
     }
     actEl.innerHTML = actions;
   }
