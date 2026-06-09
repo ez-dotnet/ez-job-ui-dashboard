@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <Authors>Gabriel Albuquerque</Authors>
+    <Title>EZ.Job.UI.Dashboard</Title>
+    <Description>Dashboard UI e endpoints JSON para monitoramento do EZ.Job — job scheduler fire-and-forget de alta performance.</Description>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <Version>1.0.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>ez-job;dashboard;monitoring;job-scheduler</PackageTags>
+    <RepositoryUrl>https://github.com/ez-dotnet/EZ.Job.UI.Dashboard</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/ez-dotnet/EZ.Job.UI.Dashboard</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+</Project>
